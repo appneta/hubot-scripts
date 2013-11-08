@@ -11,8 +11,9 @@
 # Commands:
 #   hubot jenkins build <job> - builds the specified Jenkins job
 #   hubot jenkins build <job>, <params> - builds the specified Jenkins job with parameters as key=value&key2=value2
-#   hubot jenkins list <filter> - lists Jenkins jobs
+#   hubot jenkins deploy <environment> <branch> - deploys the specified Tracelons branch to the specified environment
 #   hubot jenkins describe <job> - Describes the specified Jenkins job
+#   hubot jenkins list <filter> - lists Jenkins jobs
 
 #
 # Author:
@@ -21,10 +22,12 @@
 querystring = require 'querystring'
 
 jenkinsBuild = (msg) ->
-    url = process.env.HUBOT_JENKINS_URL
     job = querystring.escape msg.match[1]
     params = msg.match[3]
+    _jenkinsBuild(msg, job, params)
 
+_jenkinsBuild = (msg, job, params) ->
+    url = process.env.HUBOT_JENKINS_URL
     path = if params then "#{url}/job/#{job}/buildWithParameters?#{params}" else "#{url}/job/#{job}/build"
 
     req = msg.http(path)
@@ -66,10 +69,10 @@ jenkinsDescribe = (msg) ->
 
             if content.description
               response += "DESCRIPTION: #{content.description}\n"
-            
+
             response += "ENABLED: #{content.buildable}\n"
             response += "STATUS: #{content.color}\n"
-            
+
             tmpReport = ""
             if content.healthReport.length > 0
               for report in content.healthReport
@@ -144,8 +147,28 @@ jenkinsList = (msg) ->
           catch error
             msg.send error
 
+jenkinsDeploy = (msg) ->
+    env2job =
+        labs: 'deploy-labs'
+
+    environment = querystring.escape msg.match[1]
+    branch = querystring.escape msg.match[2]
+
+    if environment not in env2job
+        msg.send "Invalid environment: #{environment}"
+        msg.send "Valid choices are: #{(key for key of env2job)}"
+        return
+
+    job = env2job[environment]
+    params = "BRANCH=#{branch}"
+
+    _jenkinsBuild(msg, job, params)
+
 module.exports = (robot) ->
-  robot.respond /jenkins build ([\w\.\-_ ]+)(,?\s+(.+))?/i, (msg) ->
+  robot.respond /jenkins deploy ([\w\.\-_]+) (.+)?/i, (msg) ->
+    jenkinsDeploy(msg)
+
+  robot.respond /jenkins build ([\w\.\-_]+)(,?\s+(.+))?/i, (msg) ->
     jenkinsBuild(msg)
 
   robot.respond /jenkins list( (.+))?/i, (msg) ->
