@@ -66,10 +66,10 @@ jenkinsDescribe = (msg) ->
 
             if content.description
               response += "DESCRIPTION: #{content.description}\n"
-            
+
             response += "ENABLED: #{content.buildable}\n"
             response += "STATUS: #{content.color}\n"
-            
+
             tmpReport = ""
             if content.healthReport.length > 0
               for report in content.healthReport
@@ -145,7 +145,7 @@ jenkinsList = (msg) ->
             msg.send error
 
 module.exports = (robot) ->
-  robot.respond /jenkins build ([\w\.\-_ ]+)(,?\s+(.+))?/i, (msg) ->
+  robot.respond /jenkins build ([\w\.\-_]+)(,?\s+(.+))?/i, (msg) ->
     jenkinsBuild(msg)
 
   robot.respond /jenkins list( (.+))?/i, (msg) ->
